@@ -1,0 +1,13 @@
+<edges>
+    <!-- đường vào -->
+    <edge id="n2c" from="n" to="c" numLanes="2" speed="13.9"/> <!--edge is a direct road-->
+    <edge id="s2c" from="s" to="c" numLanes="2" speed="13.9"/>
+    <edge id="e2c" from="e" to="c" numLanes="2" speed="13.9"/>
+    <edge id="w2c" from="w" to="c" numLanes="2" speed="13.9"/>
+
+    <!-- đường ra -->
+    <edge id="c2n" from="c" to="n" numLanes="2" speed="13.9"/>
+    <edge id="c2s" from="c" to="s" numLanes="2" speed="13.9"/>
+    <edge id="c2e" from="c" to="e" numLanes="2" speed="13.9"/>
+    <edge id="c2w" from="c" to="w" numLanes="2" speed="13.9"/>
+</edges>

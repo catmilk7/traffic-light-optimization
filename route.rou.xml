@@ -1,0 +1,19 @@
+<routes>
+    <vType id="car" accel="2.0" decel="4.5" length="5" maxSpeed="13.9"/>
+    <vType id="bike" accel="3.0" decel="5.0" length="2" maxSpeed="16.0"/>
+
+    <route id="north_south" edges="n2c c2s"/>
+    <route id="east_west" edges="e2c c2w"/>
+    <route id="south_north" edges="s2c c2n"/>
+    <route id="west_east" edges="w2c c2e"/>
+
+    <flow id="car_ns" type="car" route="north_south" begin="0" vehsPerHour="75"/>
+    <flow id="car_sn" type="car" route="south_north" begin="0" vehsPerHour="75"/>
+    <flow id="car_ew" type="car" route="east_west" begin="0" vehsPerHour="75"/>
+    <flow id="car_we" type="car" route="west_east" begin="0" vehsPerHour="75"/>
+
+    <flow id="bike_ns" type="bike" route="north_south" begin="0" vehsPerHour="150"/>
+    <flow id="bike_sn" type="bike" route="south_north" begin="0" vehsPerHour="150"/>
+    <flow id="bike_ew" type="bike" route="east_west" begin="0" vehsPerHour="150"/>
+    <flow id="bike_we" type="bike" route="west_east" begin="0" vehsPerHour="150"/>
+</routes>

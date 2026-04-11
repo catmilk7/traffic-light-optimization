@@ -3,17 +3,29 @@
     <vType id="bike" accel="3.0" decel="5.0" length="2" maxSpeed="16.0"/>
 
     <route id="north_south" edges="n2c c2s"/>
+    <route id="north_west" edges="n2c c2w"/>
     <route id="east_west" edges="e2c c2w"/>
+    <route id="east_south" edges="e2c c2s"/>    
     <route id="south_north" edges="s2c c2n"/>
+    <route id="south_east" edges="s2c c2e"/>
     <route id="west_east" edges="w2c c2e"/>
+    <route id="west_south" edges="w2c c2s"/>
 
     <flow id="car_ns" type="car" route="north_south" begin="0" vehsPerHour="75"/>
+    <flow id="car_nw" type="car" route="north_west" begin="0" vehsPerHour="75"/>
     <flow id="car_sn" type="car" route="south_north" begin="0" vehsPerHour="75"/>
+    <flow id="car_se" type="car" route="south_east" begin="0" vehsPerHour="75"/>
     <flow id="car_ew" type="car" route="east_west" begin="0" vehsPerHour="75"/>
+    <flow id="car_es" type="car" route="east_south" begin="0" vehsPerHour="75"/>
     <flow id="car_we" type="car" route="west_east" begin="0" vehsPerHour="75"/>
+    <flow id="car_ws" type="car" route="west_south" begin="0" vehsPerHour="75"/>
 
     <flow id="bike_ns" type="bike" route="north_south" begin="0" vehsPerHour="150"/>
+    <flow id="bike_nw" type="bike" route="north_west" begin="0" vehsPerHour="150"/>
     <flow id="bike_sn" type="bike" route="south_north" begin="0" vehsPerHour="150"/>
+    <flow id="bike_se" type="bike" route="south_east" begin="0" vehsPerHour="150"/>
     <flow id="bike_ew" type="bike" route="east_west" begin="0" vehsPerHour="150"/>
+    <flow id="bike_es" type="bike" route="east_south" begin="0" vehsPerHour="150"/>
     <flow id="bike_we" type="bike" route="west_east" begin="0" vehsPerHour="150"/>
+    <flow id="bike_ws" type="bike" route="west_south" begin="0" vehsPerHour="150"/>
 </routes>

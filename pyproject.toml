@@ -1,0 +1,17 @@
+[project]
+name = "traffic-light-optimization"
+version = "0.1.0"
+description = "SAC Reinforcement Learning agent for dynamic SUMO traffic light control"
+readme = "README.md"
+
+# This strictly forces uv to use Python 3.10
+requires-python = ">=3.10, <3.11"
+
+dependencies = [
+    "eclipse-sumo",
+    "stable-baselines3[extra]",
+    "sumo-rl",
+]
+
+[tool.uv]
+managed = true

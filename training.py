@@ -10,12 +10,27 @@ from sumo_rl import SumoEnvironment
 
 
 def custom_reward_function(traffic_signal):
-    queue_penalty = -traffic_signal.get_total_queued()
+    # 1. Queue Penalty
+    # get_total_queued() returns a positive integer. We must manually make it negative.
+    queue_penalty = -0.1 * traffic_signal.get_total_queued()
+
+    # 2. Wait Time Diff
+    # The source code handles this perfectly. If wait time drops, it returns positive (good).
     wait_time_diff = traffic_signal._diff_waiting_time_reward()
-    pressure = traffic_signal.get_pressure()
-    pressure_penalty = -0.5 * abs(pressure)
-    reward = queue_penalty + wait_time_diff + pressure_penalty
-    return max(-500, min(reward, 50))
+
+    # 3. Pressure Reward (THE BIG FIX)
+    # Because sumo-rl defines pressure as (Out - In), positive pressure means the intersection is clearing.
+    # We ADD it now, instead of subtracting it.
+    pressure_reward = 0.1 * traffic_signal.get_pressure()
+
+    # 4. Living Reward (Baseline)
+    # Keeps the agent optimistic. Doing nothing while traffic flows equals a positive score.
+    baseline = 1.5 
+
+    reward = baseline + queue_penalty + wait_time_diff + pressure_reward
+
+    # 5. Symmetric Clipping
+    return max(-100, min(reward, 100))
 
 
 class OcclusionWrapper(gym.ObservationWrapper):
@@ -80,11 +95,11 @@ def main():
         "MlpPolicy",
         env_phase1,
         verbose=1,
-        learning_rate=1e-4,
+        learning_rate=3e-5,
         n_steps=1440,      
         batch_size=480,    
         clip_range=0.1,
-        ent_coef=0.01      
+        ent_coef=0.05      
     )
 
     new_logger = configure("./outputs/sb3_logs/", ["stdout", "csv", "tensorboard"])
@@ -96,8 +111,8 @@ def main():
     # ==========================================
     # PHASE 2: HARDCORE MODE (250k steps)
     # ==========================================
-    print("=== STARTING PHASE 2: Hardcore Mode (teleport=-1) ===")
-    env_phase2 = DummyVecEnv([lambda: make_env(-1, "phase2")])
+    print("=== STARTING PHASE 2: The next normal Mode (teleport=300) ===")
+    env_phase2 = DummyVecEnv([lambda: make_env(300, "phase2")])
     
     # Swap the environment inside the ALREADY TRAINED model
     model.set_env(env_phase2)

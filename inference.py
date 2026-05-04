@@ -4,8 +4,31 @@ from stable_baselines3 import PPO
 from sumo_rl import SumoEnvironment
 
 # --- 1. Configuration ---
-MODEL_PATH = r"C:\Users\ADMIN\Documents\GitHub\traffic-light-optimization\ppo_traffic_model.zip" # Points to my_ppo_model.zip (extension is optional in SB3)
+MODEL_PATH = r"outputs\ppo_final_hardcore_model" # Points to my_ppo_model.zip (extension is optional in SB3)
 NUM_EPISODES = 5            # How many simulation runs you want to observe
+
+def custom_reward_function(traffic_signal):
+    # 1. Queue Penalty
+    # get_total_queued() returns a positive integer. We must manually make it negative.
+    queue_penalty = -0.1 * traffic_signal.get_total_queued()
+
+    # 2. Wait Time Diff
+    # The source code handles this perfectly. If wait time drops, it returns positive (good).
+    wait_time_diff = traffic_signal._diff_waiting_time_reward()
+
+    # 3. Pressure Reward (THE BIG FIX)
+    # Because sumo-rl defines pressure as (Out - In), positive pressure means the intersection is clearing.
+    # We ADD it now, instead of subtracting it.
+    pressure_reward = 0.1 * traffic_signal.get_pressure()
+
+    # 4. Living Reward (Baseline)
+    # Keeps the agent optimistic. Doing nothing while traffic flows equals a positive score.
+    baseline = 1.5 
+
+    reward = baseline + queue_penalty + wait_time_diff + pressure_reward
+
+    # 5. Symmetric Clipping
+    return max(-100, min(reward, 100))
 
 def run_inference():
     # --- 2. Load the Environment ---
@@ -14,12 +37,14 @@ def run_inference():
     env = SumoEnvironment(
         net_file='net.net.xml',
         route_file='route.rou.xml',
-        out_csv_name='outputs/ppo_inference_log',
-        single_agent=True,   # <--- This makes it a standard Gym Env!
-        use_gui=True,       # Headless for speed
-        num_seconds=3600,    # 1 episode = 1 hour of traffic
-        reward_fn='diff-waiting-time',
-        
+        single_agent=True,
+        use_gui=True,
+        num_seconds=7200,
+        reward_fn=custom_reward_function,
+        delta_time=5,
+        yellow_time=3,
+        time_to_teleport=300,   # PARAMETERIZED
+        sumo_warnings=False
     )
     
     # --- 3. Load the Trained Model ---

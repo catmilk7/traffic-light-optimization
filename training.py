@@ -9,28 +9,52 @@ from stable_baselines3.common.callbacks import CheckpointCallback  # NEW: For au
 from sumo_rl import SumoEnvironment
 
 
-def custom_reward_function(traffic_signal):
-    # 1. Queue Penalty
-    # get_total_queued() returns a positive integer. We must manually make it negative.
-    queue_penalty = -0.1 * traffic_signal.get_total_queued()
+import numpy as np
+from sumo_rl import SumoEnvironment
 
-    # 2. Wait Time Diff
-    # The source code handles this perfectly. If wait time drops, it returns positive (good).
-    wait_time_diff = traffic_signal._diff_waiting_time_reward()
+def stable_traffic_reward(trafic_signal):
+    """
+    Standard SumoEnvironment calls this with the 'TrafficSignal' instance.
+    No subclassing required.
+    """
+    # 1. Pressure: (Out - In). Positive is good.
+    # High pressure means we are successfully moving cars out of the bottleneck.
+    pressure = trafic_signal.get_pressure()
+    pressure_reward = 0.2 * pressure if pressure > 0 else 0.1 * pressure
 
-    # 3. Pressure Reward (THE BIG FIX)
-    # Because sumo-rl defines pressure as (Out - In), positive pressure means the intersection is clearing.
-    # We ADD it now, instead of subtracting it.
-    pressure_reward = 0.1 * traffic_signal.get_pressure()
+    # 2. Max Queue Penalty: The "Anti-Starvation" anchor.
+    # Instead of squaring total time, we penalize the most congested lane.
+    # This prevents side-street starvation without mathematical instability.
+    queues = trafic_signal.get_lanes_queue()  # Returns list of density [0, 1] per lane
+    max_queue_penalty = -2.0 * max(queues) if queues else 0
 
-    # 4. Living Reward (Baseline)
-    # Keeps the agent optimistic. Doing nothing while traffic flows equals a positive score.
-    baseline = 1.5 
+    # 3. Wait Time Delta: Short-term trend.
+    wait_diff = trafic_signal._diff_waiting_time_reward()
 
-    reward = baseline + queue_penalty + wait_time_diff + pressure_reward
+    # 4. Total Halting Penalty: General congestion check.
+    total_halting = -0.1 * trafic_signal.get_total_queued()
 
-    # 5. Symmetric Clipping
-    return max(-100, min(reward, 100))
+    # 5. Living Reward
+    baseline = 1.0
+
+    return baseline + pressure_reward + max_queue_penalty + wait_diff + total_halting
+
+# --- Environment Setup ---
+def make_env(teleport_time):
+    # Use the base SumoEnvironment and pass the function directly
+    env = SumoEnvironment(
+        net_file='net.net.xml',
+        route_file='route.rou.xml',
+        single_agent=True,
+        use_gui=False,
+        num_seconds=7200,
+        reward_fn=stable_traffic_reward, # Pass function here
+        delta_time=5,
+        yellow_time=3,
+        time_to_teleport=teleport_time,
+        sumo_warnings=False
+    )
+    return env
 
 
 class OcclusionWrapper(gym.ObservationWrapper):
@@ -69,7 +93,7 @@ def main():
             single_agent=True,
             use_gui=False,
             num_seconds=7200,
-            reward_fn=custom_reward_function,
+            reward_fn=stable_traffic_reward,
             delta_time=5,
             yellow_time=3,
             time_to_teleport=teleport_time,   # PARAMETERIZED

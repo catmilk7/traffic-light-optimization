@@ -19,13 +19,27 @@ def pick_video():
         filetypes=[("Video files", "*.mp4 *.avi *.mov *.mkv")]
     )
 
-def count_vehicles(video_path, show_preview=False, confidence=0.25, preview_width=1280):
+def get_screen_size():
+    """Grab the screen resolution so the preview window never exceeds it."""
+    root = tk.Tk()
+    root.withdraw()
+    w = root.winfo_screenwidth()
+    h = root.winfo_screenheight()
+    root.destroy()
+    return w, h
+
+def count_vehicles(video_path, show_preview=True, confidence=0.25, max_preview_fraction=0.6):
     cap = cv2.VideoCapture(video_path)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     cap.release()
     print(f"Video: {total_frames} frames at {fps:.1f} fps ({total_frames/fps:.0f}s)")
     print(f"Processing...\n")
+
+    # Work out a preview size that comfortably fits on screen
+    screen_w, screen_h = get_screen_size()
+    max_w = int(screen_w * max_preview_fraction)
+    max_h = int(screen_h * max_preview_fraction)
 
     # Load the YOLOv8 model (will download if not present)
     model = YOLO("yolov8s.pt")
@@ -35,12 +49,13 @@ def count_vehicles(video_path, show_preview=False, confidence=0.25, preview_widt
         classes=list(VEHICLE_CLASSES.keys()),
         conf=confidence,
         stream=True,
-        show=False,
+        show=False,   # IMPORTANT: don't let ultralytics open its own full-size window
         verbose=False,
     )
 
     frame_stats = []
     start_time = time.time()
+    window_ready = False
 
     for frame_idx, r in enumerate(results):
         counts = {label: 0 for label in VEHICLE_CLASSES.values()}
@@ -57,9 +72,15 @@ def count_vehicles(video_path, show_preview=False, confidence=0.25, preview_widt
         if show_preview:
             annotated = r.plot()
             h, w = annotated.shape[:2]
-            scale = preview_width / w
-            preview = cv2.resize(annotated, (preview_width, int(h * scale)))
-            cv2.namedWindow("Vehicle Detection", cv2.WINDOW_NORMAL)
+            # Scale to fit within max_w x max_h, keeping aspect ratio
+            scale = min(max_w / w, max_h / h, 1.0)
+            preview = cv2.resize(annotated, (int(w * scale), int(h * scale)))
+
+            if not window_ready:
+                cv2.namedWindow("Vehicle Detection", cv2.WINDOW_NORMAL)
+                cv2.resizeWindow("Vehicle Detection", preview.shape[1], preview.shape[0])
+                window_ready = True
+
             cv2.imshow("Vehicle Detection", preview)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
@@ -87,7 +108,7 @@ if __name__ == "__main__":
         print("No file selected.")
     else:
         print(f"Running YOLO on: {path}\n")
-        stats = count_vehicles(path)
+        stats = count_vehicles(path, show_preview=True, max_preview_fraction=0.6)
 
         totals = [s["total"] for s in stats]
         print(f"── Summary ──────────────────────")

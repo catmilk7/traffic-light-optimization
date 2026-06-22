@@ -10,8 +10,11 @@ requires-python = ">=3.10, <3.11"
 dependencies = [
     "eclipse-sumo",
     "libsumo>=1.26.0",
+    "numpy>=2.2.6",
+    "opencv-python>=4.13.0.92",
     "stable-baselines3[extra]",
     "sumo-rl",
+    "ultralytics>=8.4.67",
 ]
 
 [tool.uv]
